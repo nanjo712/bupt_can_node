@@ -5,6 +5,7 @@
 #include <linux/can.h>
 #include <linux/can/raw.h>
 #include <net/if.h>
+#include <cstdint>
 
 enum CAN_ID_TYPE{
     CAN_ID_STD = 0,
@@ -25,7 +26,7 @@ public:
     ~Can();
     int set_recv_filter(const int &id);
     can_frame rece_can();
-    int send_can(const int &id, const int &dlc, const char *data);
+    int send_can(const int &id, const int &dlc, const uint8_t *data);
     int send_can(const can_frame &frame);
     int close_can();
 };

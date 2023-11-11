@@ -51,7 +51,7 @@ can_frame Can::rece_can()
     return frame;
 }
 
-int Can::send_can(const int &id,const int &dlc,const char* data)
+int Can::send_can(const int &id,const int &dlc,const uint8_t* data)
 {
     struct can_frame frame;
     frame.can_id = id;
