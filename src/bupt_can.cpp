@@ -60,6 +60,13 @@ int Can::send_can(const int &id,const int &dlc,const char* data)
     {
         frame.data[i] = data[i];
     }
+    write(can_fd,&frame,sizeof(frame));
+    return 0;
+}
+
+int Can::send_can(const can_frame &frame)
+{
+    write(can_fd,&frame,sizeof(frame));    
     return 0;
 }
 

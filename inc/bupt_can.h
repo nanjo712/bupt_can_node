@@ -26,6 +26,7 @@ public:
     int set_recv_filter(const int &id);
     can_frame rece_can();
     int send_can(const int &id, const int &dlc, const char *data);
+    int send_can(const can_frame &frame);
     int close_can();
 };
 
