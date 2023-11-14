@@ -1,57 +1,60 @@
 #include "bupt_can.h"
-#include<sys/types.h>
-#include<sys/socket.h>
-#include<net/if.h>
-#include<sys/ioctl.h>
-#include<linux/can/raw.h>
-#include<unistd.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <net/if.h>
+#include <sys/ioctl.h>
+#include <linux/can/raw.h>
+#include <unistd.h>
 #include <string>
 #include <cstring>
 
 Can::Can(const std::string &can_name)
 {
     this->can_name = can_name;
-    can_fd = socket(AF_CAN,SOCK_RAW,CAN_RAW);
-    std::strcpy(ifr.ifr_name,can_name.c_str());
-    ioctl(can_fd,SIOCGIFINDEX,&ifr);
-    addr.can_family = AF_CAN;
-    addr.can_ifindex = ifr.ifr_ifindex;
-    bind(can_fd,(struct sockaddr*)&addr,sizeof(addr));
-}
+    // can_fd_read = socket(AF_CAN,SOCK_RAW,CAN_RAW);
+    can_fd_write = socket(AF_CAN,SOCK_RAW,CAN_RAW);
 
-Can::Can(const Can& other)
-{
-    this->can_name = other.can_name;
-    can_fd = socket(AF_CAN,SOCK_RAW,CAN_RAW);
     std::strcpy(ifr.ifr_name,can_name.c_str());
-    ioctl(can_fd,SIOCGIFINDEX,&ifr);
+
+    // ioctl(can_fd_read,SIOCGIFINDEX,&ifr);
+    ioctl(can_fd_write,SIOCGIFINDEX,&ifr);
+
     addr.can_family = AF_CAN;
     addr.can_ifindex = ifr.ifr_ifindex;
-    bind(can_fd,(struct sockaddr*)&addr,sizeof(addr));
+
+    // bind(can_fd_read,(struct sockaddr*)&addr,sizeof(addr));
+    bind(can_fd_write,(struct sockaddr*)&addr,sizeof(addr));
+    isDestroyed = false;
 }
 
 Can::~Can()
 {
-    close_can();
+    isDestroyed = true;
+    shutdown(can_fd_read,SHUT_RDWR);
+    shutdown(can_fd_write,SHUT_RDWR);
+    send_thread_->join();
+    recv_thread_->join();
 }
 
-int Can::set_recv_filter(const int &id)
+void Can::can_start()
 {
-    struct can_filter filter;
-    filter.can_id = id;
-    filter.can_mask = CAN_SFF_MASK;
-    setsockopt(can_fd,SOL_CAN_RAW,CAN_RAW_FILTER,&filter,sizeof(filter));
-    return 0;
+    // recv_thread_ = std::unique_ptr<std::thread>(new std::thread(std::bind(&Can::receive_thread,this)));
+    send_thread_ = std::unique_ptr<std::thread>(new std::thread(std::bind(&Can::send_thread,this)));
 }
 
-can_frame Can::rece_can()
+bool Can::register_msg(const uint32_t id, const std::function<void(std::shared_ptr<can_frame>)> callback)
 {
-    struct can_frame frame;
-    int recv_result = read(can_fd,&frame,sizeof(frame));
-    return frame;
+    recv_callback_map_mutex.lock();
+    recv_callback_map[id] = callback;
+    recv_callback_map_mutex.unlock();
+
+    filters[filter_size].can_id = id;
+    filters[filter_size].can_mask = CAN_SFF_MASK;
+    filter_size++;
+    return true;
 }
 
-int Can::send_can(const int &id,const int &dlc,const uint8_t* data)
+void Can::send_can(const int &id,const int &dlc,const std::array<uint8_t,8> &data)
 {
     struct can_frame frame;
     frame.can_id = id;
@@ -60,18 +63,60 @@ int Can::send_can(const int &id,const int &dlc,const uint8_t* data)
     {
         frame.data[i] = data[i];
     }
-    write(can_fd,&frame,sizeof(frame));
+    send_que_mutex.lock();
+    send_que.push(frame);
+    send_que_mutex.unlock();
+}
+
+void Can::send_can(const can_frame &frame)
+{
+    send_que_mutex.lock();
+    send_que.push(frame);
+    send_que_mutex.unlock();  
+}
+
+void Can::receive_thread()
+{
+    while (!isDestroyed)
+    {
+        struct can_frame frame;
+        int nbytes = read(can_fd_read,&frame,sizeof(frame));
+        if (nbytes > 0)
+        {
+            std::shared_ptr<can_frame> frame_ptr = std::make_shared<can_frame>(frame);
+            recv_callback_map_mutex.lock();
+            if (recv_callback_map.find(frame.can_id) != recv_callback_map.end())
+            {
+                recv_callback_map[frame.can_id](frame_ptr);
+            }
+            recv_callback_map_mutex.unlock();
+        }
+    }
+}
+
+void Can::send_thread()
+{
+    while (!isDestroyed)
+    {
+        send_que_mutex.lock();
+        if (!send_que.empty())
+        {
+            struct can_frame frame = send_que.front();
+            send_que.pop();
+            send_que_mutex.unlock();
+            write(can_fd_write,&frame,sizeof(frame));
+        }
+        else
+        {
+            send_que_mutex.unlock();
+        }
+    }
+}
+
+int Can::set_recv_filter()
+{
+    setsockopt(can_fd_read,SOL_CAN_RAW,CAN_RAW_FILTER,
+        filters.data(),sizeof(struct can_filter)*filter_size);
     return 0;
 }
 
-int Can::send_can(const can_frame &frame)
-{
-    write(can_fd,&frame,sizeof(frame));    
-    return 0;
-}
-
-int Can::close_can()
-{
-    close(can_fd);
-    return 0;
-}
