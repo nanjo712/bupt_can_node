@@ -11,18 +11,18 @@
 Can::Can(const std::string &can_name)
 {
     this->can_name = can_name;
-    // can_fd_read = socket(AF_CAN,SOCK_RAW,CAN_RAW);
+    can_fd_read = socket(AF_CAN,SOCK_RAW,CAN_RAW);
     can_fd_write = socket(AF_CAN,SOCK_RAW,CAN_RAW);
 
     std::strcpy(ifr.ifr_name,can_name.c_str());
 
-    // ioctl(can_fd_read,SIOCGIFINDEX,&ifr);
+    ioctl(can_fd_read,SIOCGIFINDEX,&ifr);
     ioctl(can_fd_write,SIOCGIFINDEX,&ifr);
 
     addr.can_family = AF_CAN;
     addr.can_ifindex = ifr.ifr_ifindex;
 
-    // bind(can_fd_read,(struct sockaddr*)&addr,sizeof(addr));
+    bind(can_fd_read,(struct sockaddr*)&addr,sizeof(addr));
     bind(can_fd_write,(struct sockaddr*)&addr,sizeof(addr));
     isDestroyed = false;
 }
@@ -38,7 +38,7 @@ Can::~Can()
 
 void Can::can_start()
 {
-    // recv_thread_ = std::unique_ptr<std::thread>(new std::thread(std::bind(&Can::receive_thread,this)));
+    recv_thread_ = std::unique_ptr<std::thread>(new std::thread(std::bind(&Can::receive_thread,this)));
     send_thread_ = std::unique_ptr<std::thread>(new std::thread(std::bind(&Can::send_thread,this)));
 }
 
