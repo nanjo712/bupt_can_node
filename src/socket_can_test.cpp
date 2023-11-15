@@ -5,7 +5,7 @@
 #include <thread>
 #include <functional>
 
-void print_the_msg(const std::shared_ptr<can_frame> frame)
+void print_the_msg(const std::shared_ptr<can_frame> &frame)
 {
     std::cout << "id: " << frame->can_id << std::endl;
     std::cout << "dlc: " << frame->can_dlc << std::endl;
@@ -21,6 +21,7 @@ int main()
 {
     Can can("can0");
     can.register_msg(0x205, std::bind(print_the_msg, std::placeholders::_1));
+    can.register_msg(0x1FF, std::bind(print_the_msg, std::placeholders::_1));
     can.set_recv_filter();
     printf("set recv filter\n");
     can.can_start();
