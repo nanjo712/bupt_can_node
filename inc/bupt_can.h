@@ -57,6 +57,9 @@ public:
     void send_can(const int &id, const int &dlc, const std::array<uint8_t,8> &data);
     void send_can(const can_frame &frame);
 
+    void send_can_with_respond(const int &id, const int &dlc, const std::array<uint8_t,8> &data, const std::function<void(std::shared_ptr<can_frame>)> callback);
+    void send_can_with_respond(const can_frame &frame, const std::function<void(std::shared_ptr<can_frame>)> callback);
+
     int set_recv_filter();
 };
 

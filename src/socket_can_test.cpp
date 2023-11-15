@@ -34,6 +34,7 @@ int main()
             can.send_can(0x1FF,8,data);
         }
     });
+    
     send_thread.detach();
     while (true)
     {

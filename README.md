@@ -16,6 +16,8 @@
         - bupt_can.cpp # CAN收发管理节点源文件
         - socket_can_test.cpp # SocketCAN测试文件
     - CMakeLists.txt # CMake配置文件
+    - setup_can.sh # SocketCAN配置脚本
+    - LICENSE # 项目许可证
     - README.md # 项目说明文件
 ```
 
@@ -31,6 +33,7 @@ make
 ## 4.运行方法
 
 ```
+cd build
 ./can_node
 ```
 
