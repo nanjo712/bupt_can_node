@@ -9,12 +9,12 @@
 ```
 - BUPT_CAN_Node
     - config
-        - bupt_can.yaml # CAN收发管理节点配置文件
+        - bupt_can.yaml # CAN收发管理节点配置文件 (未启用)
     - inc
-        - bupt_can.h # CAN收发管理节点头文件
+        - bupt_can.h # CAN收发管理节点头文件 
     - src
-        - bupt_can.cpp # CAN收发管理节点源文件
-        - socket_can_test.cpp # SocketCAN测试文件
+        - bupt_can.cpp # CAN收发管理节点源文件  
+        - socket_can_test.cpp # SocketCAN测试文件 
     - CMakeLists.txt # CMake配置文件
     - setup_can.sh # SocketCAN配置脚本
     - LICENSE # 项目许可证
@@ -23,6 +23,9 @@
 
 ## 3.构建方法
 
+本工程依赖pthread和SocketCAN库，你需要安装这些库才能构建本工程。
+使用C++17以上的标准进行编译。
+
 ```
 mkdir build
 cd build
@@ -30,10 +33,74 @@ cmake ..
 make
 ```
 
-## 4.运行方法
+## 4.运行例程
+
+请在正确设置can设备后运行程序，否则程序将无法正常运行。
+
+如果你不知道如何设置can设备，请参考[SocketCAN](https://www.kernel.org/doc/Documentation/networking/can.txt)的官方文档。
+
+对于一般的CAN卡，你可以尝试使用setup_can.sh脚本来设置can设备。
+
+脚本将会将can0设备设置为1000kbps的速率，启用回环模式。
+
+注意，你需要安装can-utils和net-tools来使用脚本。
 
 ```
 cd build
 ./can_node
 ```
 
+程序将以1ms的间隔发送ID为0x1FF的消息，SocketCAN的回环模式被默认启用，故程序将会收到自己发送的消息。屏幕上将不断刷新出收发的消息。
+
+## 5.Can类的使用方法
+
+对象接口如下：
+
+```cpp
+/**
+ * @brief It will star to receive 
+ * @brief and send can frame
+ * @param none
+*/
+void can_start();
+/**
+ * @brief Register a callback function
+ * @brief to a can frame id
+ * @param id The can frame id
+ * @param callback The callback function
+*/
+void register_msg(const int &id,const std::function<void(const std::shared_ptr<can_frame>&)> callback);
+/**
+ * @brief Send a can frame
+ * @param id The can frame id
+ * @param dlc The can frame dlc
+ * @param data The can frame data
+*/
+void send_can(const int &id, const int &dlc, const std::array<uint8_t,8> &data);
+/**
+ * @brief Send a can frame
+ * @param frame The can frame
+*/
+void send_can(const can_frame &frame);
+/**
+ * @brief Send a can frame and wait for respond
+ * @param id The can frame id
+ * @param dlc The can frame dlc
+ * @return true if success, false if failed
+*/
+bool send_can_with_respond(const int &id, const int &dlc, const std::array<uint8_t,8> &data);
+/**
+ * @brief Send a can frame and wait for respond
+ * @param frame The can frame
+ * @return true if success, false if failed
+*/
+bool send_can_with_respond(const can_frame &frame);
+/**
+ * @brief Set the recv filter
+ * @param none
+ * @return 0 if success, -1 if failed
+*/
+int set_recv_filter();
+```
+
+你可以参考例程获得更多信息。
