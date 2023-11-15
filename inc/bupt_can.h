@@ -61,7 +61,7 @@ public:
      * @param id The can frame id
      * @param callback The callback function
     */
-    void register_msg(const uint32_t id,const std::function<void(const std::shared_ptr<can_frame>&)> callback);
+    void register_msg(const int &id,const std::function<void(const std::shared_ptr<can_frame>&)> callback);
     /**
      * @brief Send a can frame
      * @param id The can frame id

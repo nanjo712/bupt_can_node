@@ -42,7 +42,7 @@ void Can::can_start()
     send_thread_ = std::unique_ptr<std::thread>(new std::thread(std::bind(&Can::send_thread,this)));
 }
 
-void Can::register_msg(const uint32_t id, const std::function<void(const std::shared_ptr<can_frame>&)> callback)
+void Can::register_msg(const int &id, const std::function<void(const std::shared_ptr<can_frame>&)> callback)
 {
     recv_callback_map_mutex.lock();
     recv_callback_map[id] = callback;
