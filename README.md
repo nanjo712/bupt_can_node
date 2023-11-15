@@ -8,8 +8,6 @@
 
 ```
 - BUPT_CAN_Node
-    - config
-        - bupt_can.yaml # CAN收发管理节点配置文件 (未启用)
     - inc
         - bupt_can.h # CAN收发管理节点头文件 
     - src
