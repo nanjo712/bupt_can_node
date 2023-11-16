@@ -12,7 +12,8 @@
         - bupt_can.h # CAN收发管理节点头文件 
     - src
         - bupt_can.cpp # CAN收发管理节点源文件  
-        - socket_can_test.cpp # SocketCAN测试文件 
+    - example
+        - socket_can_test.cpp # SocketCAN测试程序
     - CMakeLists.txt # CMake配置文件
     - setup_can.sh # SocketCAN配置脚本
     - LICENSE # 项目许可证
