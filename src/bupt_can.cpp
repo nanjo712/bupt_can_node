@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include <string>
 #include <cstring>
+#include <iostream>
 
 Can::Can(const std::string &can_name)
 {

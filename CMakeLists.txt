@@ -6,6 +6,8 @@ set(CMAKE_C_COMPILER "/usr/bin/gcc")
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 project(bupt_can C CXX)
 
 include_directories(inc)
