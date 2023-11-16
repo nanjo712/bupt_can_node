@@ -101,7 +101,10 @@ void Can::send_thread()
             send_que.pop();
             send_que_mutex.unlock();
             can_fd_write_mutex.lock();
-            write(can_fd_write,&frame,sizeof(frame));
+            ssize_t ret = write(can_fd_write,&frame,sizeof(frame));
+            if (ret == -1) {
+                std::cerr << "Error writing to CAN bus" << std::endl;
+            }
             can_fd_write_mutex.unlock();
         }
         else

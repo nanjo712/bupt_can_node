@@ -93,6 +93,7 @@ public:
      * @return 0 if success, -1 if failed
     */
     int set_recv_filter();
+    
 };
 
 #endif // BUPT_CAN_H
