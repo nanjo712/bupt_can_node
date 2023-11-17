@@ -19,9 +19,9 @@ void print_the_msg(const std::shared_ptr<can_frame> &frame)
 
 int main()
 {
-    Can can("can0");
-    can.register_msg(0x205, std::bind(print_the_msg, std::placeholders::_1));
-    can.register_msg(0x1FF, std::bind(print_the_msg, std::placeholders::_1));
+    Can can("vcan0");
+    can.register_msg(0x205, Can::CAN_ID_STD, std::bind(print_the_msg, std::placeholders::_1));
+    can.register_msg(0x12345678, Can::CAN_ID_EXT, std::bind(print_the_msg, std::placeholders::_1));
     // 注册CAN消息回调函数
     // 这个函数会把对应的CAN消息的ID和回调函数绑定起来
     // 并且会把对应的ID添加到过滤器中
@@ -40,12 +40,14 @@ int main()
     std::thread send_thread([&can](){
         while (true)
         {
-            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
             std::array<uint8_t,8> data = {0x1F,0xFF,0x00,0x00,0x00,0x00,0x00};
-            can.send_can(0x1FF,8,data);
+            can.send_can(0x12345678,Can::CAN_ID_EXT,8,data);
+            can.send_can(0x205,Can::CAN_ID_STD,8,data);
             // 请注意，不要无延时全速发消息
             // 这样会导致CAN总线拥塞
             // 这样的场景很罕见，但是还是要注意
+            // 用专业CAN卡测试，发送频率在1khz时已经几乎达到极限
         }
     });
     send_thread.detach();

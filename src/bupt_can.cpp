@@ -43,21 +43,49 @@ void Can::can_start()
     send_thread_ = std::unique_ptr<std::thread>(new std::thread(std::bind(&Can::send_thread,this)));
 }
 
-void Can::register_msg(const uint32_t &id, const std::function<void(const std::shared_ptr<can_frame>&)> callback)
+uint32_t Can::set_id_type(const CAN_ID_TYPE &id_type, const uint32_t &id)
+{
+    uint32_t ret = id;
+    if (id_type == CAN_ID_TYPE::CAN_ID_EXT)
+    {
+        ret |= CAN_EFF_FLAG;
+    }
+    else if (id_type == CAN_ID_TYPE::CAN_ID_RTR)
+    {
+        ret |= CAN_RTR_FLAG;
+    }
+    else if (id_type == CAN_ID_TYPE::CAN_ID_ERR)
+    {
+        ret |= CAN_ERR_FLAG;
+    }
+    return ret;
+}
+
+void Can::register_msg(const uint32_t &id, const CAN_ID_TYPE &id_type, const std::function<void(const std::shared_ptr<can_frame>&)> callback)
 {
     recv_callback_map_mutex.lock();
     recv_callback_map[id] = callback;
     recv_callback_map_mutex.unlock();
 
-    filters[filter_size].can_id = id;
-    filters[filter_size].can_mask = CAN_SFF_MASK;
+    filters[filter_size].can_id = id ;
+    filters[filter_size].can_id = set_id_type(id_type,filters[filter_size].can_id);
+    std::cout<<id<<" "<<filters[filter_size].can_id<<std::endl;
+    if (id_type == CAN_ID_STD)
+        filters[filter_size].can_mask = CAN_SFF_MASK;
+    else if (id_type == CAN_ID_EXT)
+        filters[filter_size].can_mask = CAN_EFF_MASK,printf("1\n");
+    else if (id_type == CAN_ID_ERR)
+        filters[filter_size].can_mask = CAN_ERR_MASK;
     filter_size++;
 }
 
-void Can::send_can(const uint32_t &id,const int &dlc,const std::array<uint8_t,8> &data)
+void Can::send_can(const uint32_t &id, const CAN_ID_TYPE &id_type, const int &dlc,const std::array<uint8_t,8> &data)
 {
     struct can_frame frame;
+    
     frame.can_id = id;
+    frame.can_id = set_id_type(id_type,frame.can_id);
+
     frame.can_dlc = dlc;
     for (int i = 0;i < dlc;i++)
     {
@@ -76,15 +104,30 @@ void Can::receive_thread()
 {
     while (!isDestroyed)
     {
-        struct can_frame frame;
-        int nbytes = read(can_fd_read,&frame,sizeof(frame));
+        std::shared_ptr<can_frame> frame_ptr = std::make_shared<can_frame>();
+        int nbytes = read(can_fd_read,frame_ptr.get(),sizeof(struct can_frame));
         if (nbytes > 0)
         {
-            std::shared_ptr<can_frame> frame_ptr = std::make_shared<can_frame>(frame);
-            recv_callback_map_mutex.lock();
-            if (recv_callback_map.find(frame.can_id) != recv_callback_map.end())
+            if (frame_ptr->can_id & CAN_ERR_FLAG)
             {
-                recv_callback_map[frame.can_id](frame_ptr);
+                frame_ptr->can_id &= CAN_ERR_MASK;
+            }
+            else if (frame_ptr->can_id & CAN_EFF_FLAG)
+            {
+                frame_ptr->can_id &= CAN_EFF_MASK;
+            }
+            else if (frame_ptr->can_id & CAN_RTR_FLAG)
+            {
+                frame_ptr->can_id &= CAN_SFF_MASK;
+            }
+            else
+            {
+                frame_ptr->can_id &= CAN_SFF_MASK;
+            }
+            recv_callback_map_mutex.lock();
+            if (recv_callback_map.find(frame_ptr->can_id) != recv_callback_map.end())
+            {
+                recv_callback_map[frame_ptr->can_id](frame_ptr);
             }
             recv_callback_map_mutex.unlock();
         }
@@ -115,7 +158,7 @@ void Can::send_thread()
     }
 }
 
-bool Can::send_can_with_respond(const uint32_t &id, const int &dlc, const std::array<uint8_t, 8> &data)
+bool Can::send_can_with_respond(const uint32_t &id, const CAN_ID_TYPE &id_type, const int &dlc, const std::array<uint8_t, 8> &data)
 {
     struct can_frame frame;
     frame.can_id = id;
