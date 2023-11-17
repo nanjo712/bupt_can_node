@@ -61,14 +61,14 @@ public:
      * @param id The can frame id
      * @param callback The callback function
     */
-    void register_msg(const int &id,const std::function<void(const std::shared_ptr<can_frame>&)> callback);
+    void register_msg(const uint32_t &id,const std::function<void(const std::shared_ptr<can_frame>&)> callback);
     /**
      * @brief Send a can frame
      * @param id The can frame id
      * @param dlc The can frame dlc
      * @param data The can frame data
     */
-    void send_can(const int &id, const int &dlc, const std::array<uint8_t,8> &data);
+    void send_can(const uint32_t &id, const int &dlc, const std::array<uint8_t,8> &data);
     /**
      * @brief Send a can frame
      * @param frame The can frame
@@ -80,7 +80,7 @@ public:
      * @param dlc The can frame dlc
      * @return true if success, false if failed
     */
-    bool send_can_with_respond(const int &id, const int &dlc, const std::array<uint8_t,8> &data);
+    bool send_can_with_respond(const uint32_t &id, const int &dlc, const std::array<uint8_t,8> &data);
     /**
      * @brief Send a can frame and wait for respond
      * @param frame The can frame

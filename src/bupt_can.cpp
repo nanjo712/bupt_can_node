@@ -43,7 +43,7 @@ void Can::can_start()
     send_thread_ = std::unique_ptr<std::thread>(new std::thread(std::bind(&Can::send_thread,this)));
 }
 
-void Can::register_msg(const int &id, const std::function<void(const std::shared_ptr<can_frame>&)> callback)
+void Can::register_msg(const uint32_t &id, const std::function<void(const std::shared_ptr<can_frame>&)> callback)
 {
     recv_callback_map_mutex.lock();
     recv_callback_map[id] = callback;
@@ -54,7 +54,7 @@ void Can::register_msg(const int &id, const std::function<void(const std::shared
     filter_size++;
 }
 
-void Can::send_can(const int &id,const int &dlc,const std::array<uint8_t,8> &data)
+void Can::send_can(const uint32_t &id,const int &dlc,const std::array<uint8_t,8> &data)
 {
     struct can_frame frame;
     frame.can_id = id;
@@ -102,11 +102,7 @@ void Can::send_thread()
             send_que.pop();
             send_que_mutex.unlock();
             can_fd_write_mutex.lock();
-<<<<<<< HEAD
-            ssize_t ret = write(can_fd_write,&frame,sizeof(frame));
-=======
             ssize_t ret = write(can_fd_write, &frame, sizeof(frame));
->>>>>>> a75945d6f2effed36a981152894ff2058f38f9e2
             if (ret == -1) {
                 std::cerr << "Error writing to CAN bus" << std::endl;
             }
@@ -119,7 +115,7 @@ void Can::send_thread()
     }
 }
 
-bool Can::send_can_with_respond(const int &id, const int &dlc, const std::array<uint8_t, 8> &data)
+bool Can::send_can_with_respond(const uint32_t &id, const int &dlc, const std::array<uint8_t, 8> &data)
 {
     struct can_frame frame;
     frame.can_id = id;
