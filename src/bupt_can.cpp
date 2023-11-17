@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include <string>
 #include <cstring>
+#include <iostream>
 
 Can::Can(const std::string &can_name)
 {
@@ -101,7 +102,11 @@ void Can::send_thread()
             send_que.pop();
             send_que_mutex.unlock();
             can_fd_write_mutex.lock();
+<<<<<<< HEAD
             ssize_t ret = write(can_fd_write,&frame,sizeof(frame));
+=======
+            ssize_t ret = write(can_fd_write, &frame, sizeof(frame));
+>>>>>>> a75945d6f2effed36a981152894ff2058f38f9e2
             if (ret == -1) {
                 std::cerr << "Error writing to CAN bus" << std::endl;
             }
