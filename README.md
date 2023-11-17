@@ -59,26 +59,40 @@ cd build
 对象接口如下：
 
 ```cpp
+enum CAN_ID_TYPE{
+    CAN_ID_STD,
+    CAN_ID_EXT,
+    CAN_ID_ERR,
+    CAN_ID_RTR
+};
+
+explicit Can(const std::string &can_name); // constructor
+~Can(); // destructor
 /**
- * @brief It will star to receive 
- * @brief and send can frame
+ * @brief Set the can id type
+ * @param id_type The can id type
+ * @param id The can id
+ * @return The can id with type
+*/
+uint32_t set_id_type(const CAN_ID_TYPE &id_type, const uint32_t &id);
+/**
+ * @brief It will star to receive and send can frame
  * @param none
 */
 void can_start();
 /**
- * @brief Register a callback function
- * @brief to a can frame id
+ * @brief Register a callback function to a can frame id
  * @param id The can frame id
  * @param callback The callback function
 */
-void register_msg(const int &id,const std::function<void(const std::shared_ptr<can_frame>&)> callback);
+void register_msg(const uint32_t &id, const CAN_ID_TYPE &id_type, const std::function<void(const std::shared_ptr<can_frame>&)> callback);
 /**
  * @brief Send a can frame
  * @param id The can frame id
  * @param dlc The can frame dlc
  * @param data The can frame data
 */
-void send_can(const int &id, const int &dlc, const std::array<uint8_t,8> &data);
+void send_can(const uint32_t &id, const CAN_ID_TYPE &id_type, const int &dlc, const std::array<uint8_t,8> &data);
 /**
  * @brief Send a can frame
  * @param frame The can frame
@@ -90,7 +104,7 @@ void send_can(const can_frame &frame);
  * @param dlc The can frame dlc
  * @return true if success, false if failed
 */
-bool send_can_with_respond(const int &id, const int &dlc, const std::array<uint8_t,8> &data);
+bool send_can_with_respond(const uint32_t &id, const CAN_ID_TYPE &id_type, const int &dlc, const std::array<uint8_t,8> &data);
 /**
  * @brief Send a can frame and wait for respond
  * @param frame The can frame
