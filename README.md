@@ -16,6 +16,7 @@
         - socket_can_test.cpp # SocketCAN测试程序
     - CMakeLists.txt # CMake配置文件
     - setup_can.sh # SocketCAN配置脚本
+    - setup_vcan.sh # 虚拟CAN配置脚本
     - LICENSE # 项目许可证
     - README.md # 项目说明文件
 ```
@@ -41,7 +42,7 @@ make
 
 如果你不知道如何设置can设备，请参考[SocketCAN](https://www.kernel.org/doc/Documentation/networking/can.txt)的官方文档。
 
-对于一般的CAN卡，你可以尝试使用setup_can.sh脚本来设置can设备。
+对于一般的CAN卡，你可以尝试使用setup_can.sh脚本来设置can设备或者setup_vcan.sh来获得一个虚拟can口。
 
 脚本将会将can0设备设置为1000kbps的速率，启用回环模式。
 
@@ -55,6 +56,8 @@ cd build
 程序将以1ms的间隔发送ID为0x1FF的消息，SocketCAN的回环模式被默认启用，故程序将会收到自己发送的消息。屏幕上将不断刷新出收发的消息。
 
 ## 5.Can类的使用方法
+
+**需要注意的是，0x7FC是本程序的保留ID，用于结束接收线程，如无必要请勿占用该ID。**
 
 对象接口如下：
 

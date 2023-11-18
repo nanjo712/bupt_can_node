@@ -26,13 +26,16 @@ Can::Can(const std::string &can_name)
     bind(can_fd_read,(struct sockaddr*)&addr,sizeof(addr));
     bind(can_fd_write,(struct sockaddr*)&addr,sizeof(addr));
     isDestroyed = false;
+
+    filters[filter_size].can_id = 0x7FC;
+    filters[filter_size].can_mask = CAN_SFF_MASK;
+    filter_size++;
 }
 
 Can::~Can()
 {
     isDestroyed = true;
-    shutdown(can_fd_read,SHUT_RDWR);
-    shutdown(can_fd_write,SHUT_RDWR);
+    send_can_with_respond(0x7FC,CAN_ID_STD,0,{0,0,0,0,0,0,0,0}); // 结束帧，用于结束接收线程
     send_thread_->join();
     recv_thread_->join();
 }
