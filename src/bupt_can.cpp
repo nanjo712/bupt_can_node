@@ -43,6 +43,7 @@ Can::~Can()
 
 void Can::can_start()
 {
+    if (Started) return;
     set_recv_filter();
     recv_thread_ = std::unique_ptr<std::thread>(new std::thread(std::bind(&Can::receive_thread,this)));
     send_thread_ = std::unique_ptr<std::thread>(new std::thread(std::bind(&Can::send_thread,this)));
