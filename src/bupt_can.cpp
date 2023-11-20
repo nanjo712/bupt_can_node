@@ -35,6 +35,7 @@ Can::Can(const std::string &can_name)
 Can::~Can()
 {
     isDestroyed = true;
+    Started=true;
     send_can_with_respond(0x7FC,CAN_ID_STD,0,{0,0,0,0,0,0,0,0}); // 结束帧，用于结束接收线程
     send_thread_->join();
     recv_thread_->join();
@@ -42,8 +43,10 @@ Can::~Can()
 
 void Can::can_start()
 {
+    set_recv_filter();
     recv_thread_ = std::unique_ptr<std::thread>(new std::thread(std::bind(&Can::receive_thread,this)));
     send_thread_ = std::unique_ptr<std::thread>(new std::thread(std::bind(&Can::send_thread,this)));
+    Started = true;
 }
 
 uint32_t Can::set_id_type(const CAN_ID_TYPE &id_type, const uint32_t &id)
@@ -186,5 +189,10 @@ int Can::set_recv_filter()
     setsockopt(can_fd_read,SOL_CAN_RAW,CAN_RAW_FILTER,
         filters.data(),sizeof(struct can_filter)*filter_size);
     return 0;
+}
+
+bool Can::isStarted() const
+{
+    return Started;
 }
 

@@ -41,6 +41,7 @@ private:
     std::unique_ptr<std::thread> recv_thread_;
 
     bool isDestroyed;
+    bool Started;
 
     void receive_thread();
     void send_thread();
@@ -103,7 +104,12 @@ public:
      * @return 0 if success, -1 if failed
     */
     int set_recv_filter();
-    
+    /**
+     * @brief Check if the can is started
+     * @param none
+     * @return true if started, false if not started
+     */
+    bool isStarted() const;
 };
 
 #endif // BUPT_CAN_H
