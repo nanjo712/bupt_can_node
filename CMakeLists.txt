@@ -19,7 +19,7 @@ set(
 
 set(
     HEADERS
-    inc/bupt_can.h
+    include/bupt_can_node/bupt_can.h
 )
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2")
