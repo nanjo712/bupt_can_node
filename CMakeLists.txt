@@ -10,7 +10,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 project(bupt_can C CXX)
 
-include_directories(inc)
+include_directories(include)
 
 set(
     SOURCES

@@ -1,4 +1,4 @@
-#include "bupt_can.h"
+#include "bupt_can_node/bupt_can.h"
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <net/if.h>
