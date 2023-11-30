@@ -8,8 +8,11 @@
 
 ```
 - BUPT_CAN_Node
-    - inc
-        - bupt_can.h # CAN收发管理节点头文件 
+    - cmake
+        - bupt_can_nodeConfig.cmake.in # CMake配置文件
+    - include
+        - bupt_can
+            - bupt_can.h # CAN收发管理节点头文件 
     - src
         - bupt_can.cpp # CAN收发管理节点源文件  
     - example
@@ -30,11 +33,12 @@
 mkdir build
 cd build
 cmake ..
-make
+make install
 ```
 
-这将会构建出一个名为bupt_can_node的可执行文件和名为libbupt_can.a的静态库。
-你可以使用静态库来构建你自己的程序。
+这将会导出库文件到/usr/local/lib，头文件到/usr/local/include, 你可以通过修改CMakeLists.txt中的`CMAKE_INSTALL_PREFIX`来修改安装路径。
+
+在其他工程中使用`find_package(bupt_can REQUIRED)`来导入本工程。
 
 ## 4.运行例程
 
