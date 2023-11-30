@@ -26,6 +26,7 @@ Can::Can(const std::string &can_name)
     bind(can_fd_read,(struct sockaddr*)&addr,sizeof(addr));
     bind(can_fd_write,(struct sockaddr*)&addr,sizeof(addr));
     isDestroyed = false;
+    Started = false;
 
     filters[filter_size].can_id = 0x7FC;
     filters[filter_size].can_mask = CAN_SFF_MASK;
