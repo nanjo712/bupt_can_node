@@ -154,22 +154,15 @@ void Can::send_thread()
     {
         std::unique_lock<std::mutex> lock(send_que_mutex);
         send_que_cv.wait(lock, [this]() { return !send_que.empty(); });
-        if (!send_que.empty())
-        {
-            struct can_frame frame = send_que.front();
-            send_que.pop();
-            send_que_mutex.unlock();
-            can_fd_write_mutex.lock();
-            ssize_t ret = write(can_fd_write, &frame, sizeof(frame));
-            if (ret == -1) {
-                std::cerr << "Error writing to CAN bus" << std::endl;
-            }
-            can_fd_write_mutex.unlock();
+        struct can_frame frame = send_que.front();
+        send_que.pop();
+        send_que_mutex.unlock();
+        can_fd_write_mutex.lock();
+        ssize_t ret = write(can_fd_write, &frame, sizeof(frame));
+        if (ret == -1) {
+            std::cerr << "Error writing to CAN bus" << std::endl;
         }
-        else
-        {
-            send_que_mutex.unlock();
-        }
+        can_fd_write_mutex.unlock();
     }
 }
 
