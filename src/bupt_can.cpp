@@ -25,8 +25,10 @@ Can::Can(const std::string &can_name)
 
     bind(can_fd_read,(struct sockaddr*)&addr,sizeof(addr));
     bind(can_fd_write,(struct sockaddr*)&addr,sizeof(addr));
+
     isDestroyed = false;
     Started = false;
+    filter_size = 0;
 
     filters[filter_size].can_id = 0x7FC;
     filters[filter_size].can_mask = CAN_SFF_MASK;
@@ -106,6 +108,10 @@ void Can::send_can(const can_frame &frame)
 {
     std::lock_guard<std::mutex> lock(send_que_mutex);
     send_que.push(frame);
+    if (send_que.size()==1)
+    {
+        send_que_cv.notify_one();
+    }
 }
 
 void Can::receive_thread()
@@ -146,7 +152,8 @@ void Can::send_thread()
 {
     while (!isDestroyed)
     {
-        send_que_mutex.lock();
+        std::unique_lock<std::mutex> lock(send_que_mutex);
+        send_que_cv.wait(lock, [this]() { return !send_que.empty(); });
         if (!send_que.empty())
         {
             struct can_frame frame = send_que.front();

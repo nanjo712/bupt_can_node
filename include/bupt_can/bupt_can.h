@@ -38,6 +38,7 @@ private:
 
     std::queue<can_frame> send_que;
     std::mutex send_que_mutex;
+    std::condition_variable send_que_cv;
 
     std::map< uint32_t, std::function<void(std::shared_ptr<can_frame>)> > recv_callback_map;
     std::mutex recv_callback_map_mutex;
