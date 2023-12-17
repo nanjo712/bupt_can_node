@@ -45,11 +45,7 @@ int main()
             // 用专业CAN卡测试，发送频率在1khz时已经几乎达到极限
         }
     });
-    send_thread.detach();
-    while (true)
-    {
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
-    }
+    send_thread.join();
     return 0;
 }
 

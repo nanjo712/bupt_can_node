@@ -17,6 +17,14 @@
 
 class Can
 {
+public:
+    public:
+    enum CAN_ID_TYPE{
+        CAN_ID_STD,
+        CAN_ID_EXT,
+        CAN_ID_ERR,
+        CAN_ID_RTR
+    };
 private:
 
     std::string can_name;
@@ -30,6 +38,7 @@ private:
 
     std::queue<can_frame> send_que;
     std::mutex send_que_mutex;
+    std::condition_variable send_que_cv;
 
     std::map< uint32_t, std::function<void(std::shared_ptr<can_frame>)> > recv_callback_map;
     std::mutex recv_callback_map_mutex;
@@ -45,16 +54,6 @@ private:
 
     void receive_thread();
     void send_thread();
-public:
-    enum CAN_ID_TYPE{
-        CAN_ID_STD,
-        CAN_ID_EXT,
-        CAN_ID_ERR,
-        CAN_ID_RTR
-    };
-
-    explicit Can(const std::string &can_name); // constructor
-    ~Can(); // destructor
     /**
      * @brief Set the can id type
      * @param id_type The can id type
@@ -62,6 +61,9 @@ public:
      * @return The can id with type
     */
     uint32_t set_id_type(const CAN_ID_TYPE &id_type, const uint32_t &id);
+public:
+    explicit Can(const std::string &can_name); // constructor
+    ~Can(); // destructor
     /**
      * @brief It will star to receive and send can frame
      * @param none
