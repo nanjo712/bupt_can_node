@@ -35,7 +35,7 @@ target_link_libraries(${PROJECT_NAME}
 
 # Define the bupt_can_node executable
 add_executable(${PROJECT_NAME}_node
-    example/socket_can_test.cpp
+    test/socket_can_test.cpp
 )
 
 target_link_libraries(${PROJECT_NAME}_node
