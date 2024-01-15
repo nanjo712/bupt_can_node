@@ -150,18 +150,17 @@ void Can::send_thread()
 {
     while (true)
     {
-        std::unique_lock<std::mutex> lock(send_que_mutex);
-        send_que_cv.wait(lock, [this](){return !send_que.empty();});
+        std::unique_lock<std::mutex> lock1(send_que_mutex);
+        send_que_cv.wait(lock1, [this](){return !send_que.empty();});
         if (send_que.empty()) break;
         struct can_frame frame = send_que.front();
         send_que.pop();
-        send_que_mutex.unlock();
-        can_fd_write_mutex.lock();
+        lock1.unlock();
+        std::lock_guard<std::mutex> lock2(can_fd_write_mutex);
         ssize_t ret = write(can_fd_write, &frame, sizeof(frame));
         if (ret == -1) {
             std::cerr << "Error writing to CAN bus" << std::endl;
         }
-        can_fd_write_mutex.unlock();
         if (frame.can_id == 0x7FC) break;
     }
 }
