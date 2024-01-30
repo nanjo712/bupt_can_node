@@ -76,13 +76,6 @@ enum CAN_ID_TYPE{
 explicit Can(const std::string &can_name); // constructor
 ~Can(); // destructor
 /**
- * @brief Set the can id type
- * @param id_type The can id type
- * @param id The can id
- * @return The can id with type
-*/
-uint32_t set_id_type(const CAN_ID_TYPE &id_type, const uint32_t &id);
-/**
  * @brief It will star to receive and send can frame
  * @param none
 */

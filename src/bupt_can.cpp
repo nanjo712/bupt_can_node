@@ -25,8 +25,10 @@ Can::Can(const std::string &can_name)
 
     bind(can_fd_read,(struct sockaddr*)&addr,sizeof(addr));
     bind(can_fd_write,(struct sockaddr*)&addr,sizeof(addr));
+
     isDestroyed = false;
     Started = false;
+    filter_size = 0;
 
     filters[filter_size].can_id = 0x7FC;
     filters[filter_size].can_mask = CAN_SFF_MASK;
@@ -35,9 +37,7 @@ Can::Can(const std::string &can_name)
 
 Can::~Can()
 {
-    isDestroyed = true;
-    Started=true;
-    send_can_with_respond(0x7FC,CAN_ID_STD,0,{0,0,0,0,0,0,0,0}); // 结束帧，用于结束接收线程
+    send_can(0x7FC,CAN_ID_STD,0,{0,0,0,0,0,0,0,0}); // 结束帧，用于结束接收线程
     send_thread_->join();
     recv_thread_->join();
 }
@@ -46,8 +46,8 @@ void Can::can_start()
 {
     if (Started) return;
     set_recv_filter();
-    recv_thread_ = std::unique_ptr<std::thread>(new std::thread(std::bind(&Can::receive_thread,this)));
-    send_thread_ = std::unique_ptr<std::thread>(new std::thread(std::bind(&Can::send_thread,this)));
+    recv_thread_ = std::make_unique<std::thread>(std::bind(&Can::receive_thread,this));
+    send_thread_ = std::make_unique<std::thread>(std::bind(&Can::send_thread,this));
     Started = true;
 }
 
@@ -69,15 +69,17 @@ uint32_t Can::set_id_type(const CAN_ID_TYPE &id_type, const uint32_t &id)
     return ret;
 }
 
+void Can::set_callback_map(const uint32_t &id, const std::function<void(const std::shared_ptr<can_frame>&)> callback)
+{
+    std::lock_guard<std::mutex> lock(recv_callback_map_mutex);
+    recv_callback_map[id] = callback;
+}
+
 void Can::register_msg(const uint32_t &id, const CAN_ID_TYPE &id_type, const std::function<void(const std::shared_ptr<can_frame>&)> callback)
 {
-    recv_callback_map_mutex.lock();
-    recv_callback_map[id] = callback;
-    recv_callback_map_mutex.unlock();
-
+    set_callback_map(id, callback);
     filters[filter_size].can_id = id ;
     filters[filter_size].can_id = set_id_type(id_type,filters[filter_size].can_id);
-    std::cout<<id<<" "<<filters[filter_size].can_id<<std::endl;
     if (id_type == CAN_ID_STD)
         filters[filter_size].can_mask = CAN_SFF_MASK;
     else if (id_type == CAN_ID_EXT)
@@ -91,9 +93,7 @@ void Can::send_can(const uint32_t &id, const CAN_ID_TYPE &id_type, const int &dl
 {
     struct can_frame frame;
     
-    frame.can_id = id;
-    frame.can_id = set_id_type(id_type,frame.can_id);
-
+    frame.can_id = set_id_type(id_type,id);
     frame.can_dlc = dlc;
     for (int i = 0;i < dlc;i++)
     {
@@ -106,13 +106,17 @@ void Can::send_can(const can_frame &frame)
 {
     std::lock_guard<std::mutex> lock(send_que_mutex);
     send_que.push(frame);
+    if (send_que.size()==1)
+    {
+        send_que_cv.notify_one();
+    }
 }
 
 void Can::receive_thread()
 {
-    while (!isDestroyed)
+    while (true)
     {
-        std::shared_ptr<can_frame> frame_ptr = std::make_shared<can_frame>();
+        auto frame_ptr = std::make_shared<can_frame>();
         int nbytes = read(can_fd_read,frame_ptr.get(),sizeof(struct can_frame));
         if (nbytes > 0)
         {
@@ -132,37 +136,32 @@ void Can::receive_thread()
             {
                 frame_ptr->can_id &= CAN_SFF_MASK;
             }
-            recv_callback_map_mutex.lock();
+            std::lock_guard<std::mutex> lock(recv_callback_map_mutex);
             if (recv_callback_map.find(frame_ptr->can_id) != recv_callback_map.end())
             {
                 recv_callback_map[frame_ptr->can_id](frame_ptr);
             }
-            recv_callback_map_mutex.unlock();
+            if (frame_ptr->can_id == 0x7FC) break;
         }
     }
 }
 
 void Can::send_thread()
 {
-    while (!isDestroyed)
+    while (true)
     {
-        send_que_mutex.lock();
-        if (!send_que.empty())
-        {
-            struct can_frame frame = send_que.front();
-            send_que.pop();
-            send_que_mutex.unlock();
-            can_fd_write_mutex.lock();
-            ssize_t ret = write(can_fd_write, &frame, sizeof(frame));
-            if (ret == -1) {
-                std::cerr << "Error writing to CAN bus" << std::endl;
-            }
-            can_fd_write_mutex.unlock();
+        std::unique_lock<std::mutex> lock1(send_que_mutex);
+        send_que_cv.wait(lock1, [this](){return !send_que.empty();});
+        if (send_que.empty()) break;
+        struct can_frame frame = send_que.front();
+        send_que.pop();
+        lock1.unlock();
+        std::lock_guard<std::mutex> lock2(can_fd_write_mutex);
+        ssize_t ret = write(can_fd_write, &frame, sizeof(frame));
+        if (ret == -1) {
+            std::cerr << "Error writing to CAN bus" << std::endl;
         }
-        else
-        {
-            send_que_mutex.unlock();
-        }
+        if (frame.can_id == 0x7FC) break;
     }
 }
 
@@ -182,7 +181,6 @@ bool Can::send_can_with_respond(const can_frame &frame)
 {
     std::lock_guard<std::mutex> lock(can_fd_write_mutex);
     int ret=write(can_fd_write,&frame,sizeof(frame));
-    // TODO: wait for respond and return
     return ret!=-1;
 }
 

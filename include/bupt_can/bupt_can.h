@@ -18,7 +18,6 @@
 class Can
 {
 public:
-    public:
     enum CAN_ID_TYPE{
         CAN_ID_STD,
         CAN_ID_EXT,
@@ -26,7 +25,6 @@ public:
         CAN_ID_RTR
     };
 private:
-
     std::string can_name;
     struct ifreq ifr;
     struct sockaddr_can addr;
@@ -38,8 +36,9 @@ private:
 
     std::queue<can_frame> send_que;
     std::mutex send_que_mutex;
+    std::condition_variable send_que_cv;
 
-    std::map< uint32_t, std::function<void(std::shared_ptr<can_frame>)> > recv_callback_map;
+    std::map<uint32_t, std::function<void(std::shared_ptr<can_frame>)>> recv_callback_map;
     std::mutex recv_callback_map_mutex;
 
     std::array<struct can_filter,512> filters;
@@ -53,6 +52,8 @@ private:
 
     void receive_thread();
     void send_thread();
+
+    void set_callback_map(const uint32_t &id, const std::function<void(const std::shared_ptr<can_frame>&)> callback);
     /**
      * @brief Set the can id type
      * @param id_type The can id type
